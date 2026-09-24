@@ -87,7 +87,6 @@ document.head.insertAdjacentHTML("beforeend", `
     	word-wrap: normal;
     	margin: 0 0 1.275em;
     	padding: .85em 1em;
-    	background: #f7f7f7;
     }
     .content-editorial .fa {
     	display: inline-block;
@@ -112,23 +111,32 @@ document.head.insertAdjacentHTML("beforeend", `
  * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
  * ou modification directe du DOM selon la fonction.
  */
-async function verifierConnexionInternet() {
+async function verifierConnexionInternet(timeout = 5000) {
   if (!navigator.onLine) {
     return false;
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
   try {
     await fetch(
-      urlcssdsfr,
+      urlcssdsfr[0],
       {
         method: "HEAD",
-        cache: "no-store"
+        cache: "no-store",
+        signal: controller.signal
       }
     );
 
     return true;
+
   } catch (error) {
+    console.warn("Vérification de connexion impossible :", error);
     return false;
+
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -909,6 +917,20 @@ function transformerCorpsDSFR() {
    * Suppression de l'ancien corps
    */
   document.querySelector(".book-body")?.remove();
+  
+  /*
+   * changement des blockquotes pour des highlight
+   */
+  document.querySelectorAll('.content-editorial blockquote').forEach(blockquote => {
+      const highlight = document.createElement('div');
+      highlight.classList.add('fr-highlight');
+    
+      while (blockquote.firstChild) {
+        highlight.appendChild(blockquote.firstChild);
+      }
+    
+      blockquote.replaceWith(highlight);
+  });
 }
 
 /**
@@ -1549,26 +1571,40 @@ function ajouterCorrectionsCSSDSFR() {
  * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
  * ou modification directe du DOM selon la fonction.
  */
-function chargerCSS(urls) {
+function chargerCSS(urls, timeout = 10000) {
   if (!Array.isArray(urls)) {
     urls = [urls];
   }
+
   return urls.reduce((promise, url) => {
     return promise.then(() => {
-	  return new Promise((resolve, reject) => {
-		const link = document.createElement("link");
+      return new Promise((resolve, reject) => {
+        const link = document.createElement("link");
 
-		link.rel = "stylesheet";
-		link.href = url;
+        link.rel = "stylesheet";
+        link.href = url;
 
-		link.onload = () => resolve();
-		link.onerror = () => reject(
-		  new Error(`Impossible de charger le CSS : ${url}`)
-		);
+        const timer = setTimeout(() => {
+          reject(
+            new Error(`Timeout lors du chargement du CSS : ${url}`)
+          );
+        }, timeout);
 
-		document.head.appendChild(link);
-	  });
-	});
+        link.onload = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+
+        link.onerror = () => {
+          clearTimeout(timer);
+          reject(
+            new Error(`Impossible de charger le CSS : ${url}`)
+          );
+        };
+
+        document.head.appendChild(link);
+      });
+    });
   }, Promise.resolve());
 }
 
@@ -1578,8 +1614,7 @@ function chargerCSS(urls) {
  * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
  * ou modification directe du DOM selon la fonction.
  */
-function chargerJS(urls, options = {}) {
-  // Si une seule URL est fournie, on la transforme en tableau
+function chargerJS(urls, options = {}, timeout = 10000) {
   if (!Array.isArray(urls)) {
     urls = [urls];
   }
@@ -1591,20 +1626,31 @@ function chargerJS(urls, options = {}) {
 
         script.src = url;
 
-        // Permet notamment de charger un module ES
         if (options.type) {
-            if(options.type == "nomodule"){
-              script.nomodule = "";
-            }else{
-              script.type = options.type;
-            }
+          if (options.type === "nomodule") {
+            script.nomodule = "";
+          } else {
+            script.type = options.type;
+          }
         }
 
-        script.onload = () => resolve();
+        const timer = setTimeout(() => {
+          reject(
+            new Error(`Timeout lors du chargement du JavaScript : ${url}`)
+          );
+        }, timeout);
 
-        script.onerror = () => reject(
-          new Error(`Impossible de charger le JavaScript : ${url}`)
-        );
+        script.onload = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+
+        script.onerror = () => {
+          clearTimeout(timer);
+          reject(
+            new Error(`Impossible de charger le JavaScript : ${url}`)
+          );
+        };
 
         document.head.appendChild(script);
       });
@@ -1672,21 +1718,17 @@ async function initialiserPage() {
   nettoyerElementsPage();
 
   // fin. Charger le CSS et le JS DSFR
-  await Promise.all([
-    chargerCSS(
-      urlcssdsfr
-    ),
-    chargerJS(
-      urljsdsfr,
-      { type: "module" }
-    )
-    /*
-    chargerJS(
-      urljsdsfr_nomodule,
-      { type: "nomodule" }
-    )
-    */
-  ]);
+    try {
+      await Promise.all([
+        chargerCSS(urlcssdsfr),
+        chargerJS(urljsdsfr, { type: "module" })
+      ]);
+    } catch (error) {
+      console.error(
+        "Impossible de charger complètement le DSFR :",
+        error
+      );
+    }
   
   // finalisation. Ajuster largeur image si besoin
   ajusterLargeurImages();
@@ -1705,7 +1747,17 @@ async function initialiserPage() {
 document.addEventListener("DOMContentLoaded", async () => {
   document.body.prepend(loading);
   // On rend le spinner visible
-  document.body.style.visibility = "visible";  try {
+  document.body.style.visibility = "visible";  
+  const timeoutSpinner = setTimeout(() => {
+    console.warn(
+      "Temps maximal d'initialisation dépassé. " +
+      "Le spinner est retiré pour afficher la page."
+    );
+
+    loading.remove();
+  }, 15000);
+  
+  try {
     // Vérification préalable de la structure attendue.
     // Si `.book` est absente, aucune transformation n'est effectuée.
     const book = document.querySelector("div.book");
@@ -1727,6 +1779,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await initialiserPage();
   } finally {
+    clearTimeout(timeoutSpinner);
     loading.remove();
   }
 });
