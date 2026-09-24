@@ -6,9 +6,9 @@ License MIT - LICENSE.txt
 */
 // version dsfr basé sur shinygouv
 // version 1.15.3 sur intranet
-const urlcssdsfr = ["dsfr.min.css","utility/utility.min.css"];
-const urljsdsfr = "dsfr.module.min.js";
-const urljsdsfr_nomodule = "dsfr.nomodule.min.js";
+const urlcssdsfr = ["https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.min.css","https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/utility/utility.min.css"];
+const urljsdsfr = "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js";
+const urljsdsfr_nomodule = "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.nomodule.min.js";
 // création d'un élément spinner en attentandant la refonte du html
 const loading = document.createElement("div");
 loading.id = "loading";
@@ -1108,15 +1108,15 @@ function ajouterModaleThemeDSFR() {
                         >
                           <use
                             class="fr-artwork-decorative"
-                            href="artwork/pictograms/environment/sun.svg#artwork-decorative"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/sun.svg#artwork-decorative"
                           ></use>
                           <use
                             class="fr-artwork-minor"
-                            href="artwork/pictograms/environment/sun.svg#artwork-minor"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/sun.svg#artwork-minor"
                           ></use>
                           <use
                             class="fr-artwork-major"
-                            href="artwork/pictograms/environment/sun.svg#artwork-major"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/sun.svg#artwork-major"
                           ></use>
                         </svg>
                       </div>
@@ -1152,15 +1152,15 @@ function ajouterModaleThemeDSFR() {
                         >
                           <use
                             class="fr-artwork-decorative"
-                            href="artwork/pictograms/environment/moon.svg#artwork-decorative"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/moon.svg#artwork-decorative"
                           ></use>
                           <use
                             class="fr-artwork-minor"
-                            href="artwork/pictograms/environment/moon.svg#artwork-minor"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/moon.svg#artwork-minor"
                           ></use>
                           <use
                             class="fr-artwork-major"
-                            href="artwork/pictograms/environment/moon.svg#artwork-major"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/moon.svg#artwork-major"
                           ></use>
                         </svg>
                       </div>
@@ -1199,15 +1199,15 @@ function ajouterModaleThemeDSFR() {
                         >
                           <use
                             class="fr-artwork-decorative"
-                            href="artwork/pictograms/environment/system.svg#artwork-decorative"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/system.svg#artwork-decorative"
                           ></use>
                           <use
                             class="fr-artwork-minor"
-                            href="artwork/pictograms/environment/system.svg#artwork-minor"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/system.svg#artwork-minor"
                           ></use>
                           <use
                             class="fr-artwork-major"
-                            href="artwork/pictograms/environment/system.svg#artwork-major"
+                            href="https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/artwork/pictograms/environment/system.svg#artwork-major"
                           ></use>
                         </svg>
                       </div>
