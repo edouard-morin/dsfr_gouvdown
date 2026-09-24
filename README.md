@@ -1,4 +1,6 @@
 ![Experimental](https://img.shields.io/badge/status-Experimental-orange)
+[![R](https://img.shields.io/badge/R-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
+[![R Markdown](https://img.shields.io/badge/R%20Markdown-75AADB?logo=r&logoColor=white)](https://rmarkdown.rstudio.com/)
 
 # dsfr_gouvdown
 
