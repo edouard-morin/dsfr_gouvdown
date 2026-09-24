@@ -7,7 +7,7 @@ Afin d’utiliser le composant `dsfr_gouvdown`, dans votre gitbook, il est neces
 ```yml
 bookdown::gitbook:
   includes:
-    in_header: comp_dsfr.html
+    in_header: dsfr_gouvdown.html
 ```
 **C'est le seul fichier que vous avez à charger dans votre projet Bookdown, tout le reste est appelé en ligne !!!**
 Téléchargé le fichier depuis : https://github.com/edouard-morin/dsfr_gouvdown/blob/main/dsfr_gouvdown.html
