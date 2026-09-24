@@ -1,3 +1,5 @@
+![Experimental](https://img.shields.io/badge/status-Experimental-orange)
+
 # dsfr_gouvdown
 
 ## Utilisation
