@@ -4,8 +4,7 @@ Copyright (c) 2026, DREAL Pdl, Edouard MORIN
 Ce fichier a été développé avec l'assistance d'une intelligence artificielle.
 License MIT - LICENSE.txt
 */
-// version dsfr basé sur shinygouv
-// version 1.15.3 sur intranet
+// développé avec la version 1.15.3 du dsfr
 const urlcssdsfr = ["https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.min.css","https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/utility/utility.min.css"];
 const urljsdsfr = "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js";
 const urljsdsfr_nomodule = "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.nomodule.min.js";
@@ -18,6 +17,12 @@ loading.innerHTML = `<div class="spinner"></div>`;
 const logo = (typeof intitule_logo !== "undefined" && intitule_logo.trim() !== "")
   ? intitule_logo.replace(/\n/g, "<br>")
   : "République <br>Française";
+/**
+ * Détermine le titre principal de la page à partir de `titre_doc` ou de `<title>`.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function definirTitre() {
   const titrePage =
     document.querySelector("head > title")?.textContent.trim() || "";
@@ -48,7 +53,7 @@ document.head.insertAdjacentHTML("beforeend", `
       display: flex;
       justify-content: center;
       align-items: center;
-      background: white;
+      background: #E5E5E5;
       z-index: 9999;
     }
 
@@ -101,6 +106,12 @@ document.head.insertAdjacentHTML("beforeend", `
   </style>
 `);
 
+/**
+ * Vérifie que la connexion Internet est disponible et que la ressource DSFR principale peut être jointe.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 async function verifierConnexionInternet() {
   if (!navigator.onLine) {
     return false;
@@ -121,6 +132,12 @@ async function verifierConnexionInternet() {
   }
 }
 
+/**
+ * Désactive les anciennes feuilles de style gouvdown et GitBook pour éviter les conflits avec le DSFR.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function desactiverDefaultCSS() {
   document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
     if (link.href.includes("gouvdown") && link.href.endsWith("/default.css")) {
@@ -132,11 +149,23 @@ function desactiverDefaultCSS() {
   });
 }
 
+/**
+ * Configure la langue du document et le mode de gestion du thème DSFR.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function configurerBaliseHTML() {
   document.documentElement.setAttribute("lang", "fr");
   document.documentElement.setAttribute("data-fr-scheme", "system");
 }
 
+/**
+ * Ajoute la métadonnée Open Graph indiquant que le document est en français.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterMetaOpenGraph() {
   // Éviter les doublons
   if (document.querySelector('meta[property="og:locale"]')) {
@@ -150,6 +179,12 @@ function ajouterMetaOpenGraph() {
   document.head.appendChild(meta);
 }
 
+/**
+ * Ajoute les liens d'accès rapide DSFR en début de `<body>`.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterSkiplinksDSFR() {
   // Éviter les doublons
   if (document.querySelector(".fr-skiplinks")) {
@@ -171,9 +206,6 @@ function ajouterSkiplinksDSFR() {
             <a class="fr-link" href="#header-navigation">Menu</a>
           </li>
           <li>
-            <a class="fr-link" href="#header-search">Recherche</a>
-          </li>
-          <li>
             <a class="fr-link" href="#footer">Pied de page</a>
           </li>
         </ul>
@@ -185,6 +217,12 @@ function ajouterSkiplinksDSFR() {
   document.body.insertAdjacentHTML("afterbegin", skiplinksHTML);
 }
 
+/**
+ * Construit et ajoute l'en-tête DSFR avec le logo, le titre et le sous-titre.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterHeaderDSFR() {
   // Éviter les doublons
   if (document.querySelector(".fr-header")) {
@@ -245,6 +283,12 @@ function ajouterHeaderDSFR() {
 
 let liensFooter = [];
 
+/**
+ * Répartit les liens complémentaires du sommaire entre le header et le footer.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterLiensHeaderDSFR() {
   const headerBrand = document.querySelector(".fr-header__brand");
 
@@ -456,6 +500,12 @@ function ajouterLiensHeaderDSFR() {
   );
 }
 
+/**
+ * Transforme le conteneur gouvdown `.book` en structure principale DSFR.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function transformerBookEnMain() {
   const book = document.querySelector(".book");
 
@@ -491,6 +541,12 @@ function transformerBookEnMain() {
 
 let sommairePage = "";
 
+/**
+ * Transforme `ul.summary` en menu latéral DSFR et prépare le sommaire de la page courante.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function transformerMenuDSFR() {
   const summary = document.querySelector("ul.summary");
 
@@ -516,7 +572,7 @@ function transformerMenuDSFR() {
     <nav
       class="fr-sidemenu fr-sidemenu--sticky-full-height"
       role="navigation"
-      aria-labelledby="sidemenu-title"
+      aria-labelledby="sidemenu-title" id="header-navigation"
     >
       <div class="fr-sidemenu__inner">
 
@@ -758,6 +814,12 @@ function transformerMenuDSFR() {
   summary.remove();
 }
 
+/**
+ * Transforme le corps gouvdown en colonne éditoriale DSFR.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function transformerCorpsDSFR() {
   const bodyInner = document.querySelector(".book-body > .body-inner");
   const grid = document.querySelector(
@@ -849,6 +911,12 @@ function transformerCorpsDSFR() {
   document.querySelector(".book-body")?.remove();
 }
 
+/**
+ * Ajuste à 100 % les images du contenu éditorial qui dépassent sa largeur.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajusterLargeurImages() {
   const contentEditorial = document.querySelector(".content-editorial");
 
@@ -877,6 +945,12 @@ function ajusterLargeurImages() {
   });
 }
 
+/**
+ * Crée le pied de page DSFR à partir des informations de configuration.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function creerFooterDSFR() {
   const book = document.querySelector("main");
 
@@ -1002,6 +1076,12 @@ function creerFooterDSFR() {
   book.insertAdjacentHTML("afterend", footerHTML);
 }
 
+/**
+ * Ajoute au footer les liens précédemment mémorisés dans `liensFooter`.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterLiensFooterDSFR() {
   const listeFooter = document.querySelector(
     ".fr-footer__bottom-list"
@@ -1026,6 +1106,12 @@ function ajouterLiensFooterDSFR() {
   });
 }
 
+/**
+ * Crée la modale DSFR permettant de choisir le thème clair, sombre ou système.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterModaleThemeDSFR() {
   // Ne pas créer la modale si elle existe déjà
   if (document.getElementById("fr-theme-modal")) {
@@ -1105,6 +1191,7 @@ function ajouterModaleThemeDSFR() {
                           width="80"
                           height="80"
                           class="fr-artwork"
+                          alt="Thème clair"
                         >
                       </div>
 
@@ -1136,6 +1223,7 @@ function ajouterModaleThemeDSFR() {
                           width="80"
                           height="80"
                           class="fr-artwork"
+                          alt="Thème sombre"
                         >
                       </div>
 
@@ -1170,6 +1258,7 @@ function ajouterModaleThemeDSFR() {
                           width="80"
                           height="80"
                           class="fr-artwork"
+                          alt="Thème système"
                         >
                       </div>
 
@@ -1189,6 +1278,12 @@ function ajouterModaleThemeDSFR() {
   document.body.appendChild(modal);
 }
 
+/**
+ * Ajoute le bouton « Paramètres d'affichage » au footer.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterBoutonThemeDSFR() {
   const listeFooter = document.querySelector(
     ".fr-footer__bottom-list"
@@ -1222,6 +1317,12 @@ function ajouterBoutonThemeDSFR() {
   listeFooter.appendChild(li);
 }
 
+/**
+ * Remplace les anciennes icônes Font Awesome « copy » par leur équivalent DSFR.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function remplacerIconesCopyDSFR() {
   document.querySelectorAll("i.fa.fa-copy").forEach(icone => {
     const nouvelleIcone = document.createElement("span");
@@ -1235,6 +1336,12 @@ function remplacerIconesCopyDSFR() {
   });
 }
 
+/**
+ * Supprime les éléments gouvdown devenus inutiles après la transformation DSFR.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function nettoyerElementsPage() {
   // Supprimer le premier <li> de <ul class="summary">
   const premierLiSummary = document.querySelector(
@@ -1265,6 +1372,47 @@ function nettoyerElementsPage() {
 
 }
 
+/**
+ * Ajoute un texte alternatif aux images qui n'en possèdent pas.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
+function ajouterAltImages() {
+  const contentEditorial = document.querySelector(".content-editorial");
+
+  if (!contentEditorial) {
+    console.warn("Élément .content-editorial introuvable.");
+    return;
+  }
+
+  const titrePage = definirTitre();
+
+  let numeroIllustration = 1;
+
+  contentEditorial.querySelectorAll("img").forEach(img => {
+    const alt = img.getAttribute("alt");
+
+    // On ne modifie pas les images ayant déjà un texte alternatif
+    if (alt !== null && alt.trim() !== "") {
+      return;
+    }
+
+    img.setAttribute(
+      "alt",
+      `Illustration n°${numeroIllustration} de la page ${titrePage}`
+    );
+
+    numeroIllustration++;
+  });
+}
+
+/**
+ * Injecte les corrections CSS nécessaires à la compatibilité du contenu gouvdown avec le DSFR.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function ajouterCorrectionsCSSDSFR() {
   if (document.getElementById("dsfr-gouvdown-overrides")) {
     return;
@@ -1314,6 +1462,10 @@ function ajouterCorrectionsCSSDSFR() {
     .content-editorial pre code.sourceCode {
       color: var(--text-default-grey);
     }
+    
+    .content-editorial pre code.sourceCode .ch {
+      color: var(--text-action-high-blue-cumulus);
+    }
 
     .content-editorial pre code.sourceCode .co {
       color: var(--text-mention-grey);
@@ -1326,11 +1478,23 @@ function ajouterCorrectionsCSSDSFR() {
     .content-editorial pre code.sourceCode .fu {
       color: var(--text-title-blue-france);
     }
+    
+    .content-editorial pre code.sourceCode .at {
+      color: var(--text-action-high-green-bourgeon);
+    }
 
     .content-editorial pre code.sourceCode .st {
       color: var(--text-default-success);
     }
+    
+    .content-editorial pre code.sourceCode .sc {
+      color: var(--text-action-high-blue-france);
+    }
 
+    .content-editorial pre code.sourceCode .pp {
+      color: var(--text-action-high-pink-tuile);
+    }
+    
     .content-editorial pre code.sourceCode .dv,
     .content-editorial pre code.sourceCode .fl {
       color: var(--text-action-high-blue-france);
@@ -1379,6 +1543,12 @@ function ajouterCorrectionsCSSDSFR() {
   document.head.appendChild(style);
 }
 
+/**
+ * Charge une ou plusieurs feuilles de style CSS dans `<head>`, séquentiellement.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function chargerCSS(urls) {
   if (!Array.isArray(urls)) {
     urls = [urls];
@@ -1402,6 +1572,12 @@ function chargerCSS(urls) {
   }, Promise.resolve());
 }
 
+/**
+ * Charge un ou plusieurs fichiers JavaScript dans `<head>`, séquentiellement.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 function chargerJS(urls, options = {}) {
   // Si une seule URL est fournie, on la transforme en tableau
   if (!Array.isArray(urls)) {
@@ -1436,9 +1612,25 @@ function chargerJS(urls, options = {}) {
   }, Promise.resolve());
 }
 
+/**
+ * Orchestre l'ensemble de la transformation gouvdown vers DSFR ; une div `.book` est indispensable.
+ *
+ * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
+ * ou modification directe du DOM selon la fonction.
+ */
 async function initialiserPage() {
 
-  // Désactiver les anciens styles
+  // Garde-fou : cette librairie nécessite la structure gouvdown `.book`.
+  const book = document.querySelector("div.book");
+
+  if (!book) {
+    console.warn(
+      "Initialisation DSFR annulée : aucun élément <div class=\"book\"> trouvé."
+    );
+    return false;
+  }
+
+// Désactiver les anciens styles
   desactiverDefaultCSS();
 
   // 1. Configurer la balise <html>
@@ -1499,35 +1691,43 @@ async function initialiserPage() {
   // finalisation. Ajuster largeur image si besoin
   ajusterLargeurImages();
   
-  // correctif css
-  ajouterCorrectionsCSSDSFR()
-  
+  // ajouter alt aux images qui n'en ont pas
+  ajouterAltImages();
+  // Correctif CSS final
+  ajouterCorrectionsCSSDSFR();
+
+  return true;
 }
 
+
+// Point d'entrée : attend que le DOM soit disponible, affiche le spinner,
+// vérifie les prérequis puis lance la transformation complète.
 document.addEventListener("DOMContentLoaded", async () => {
   document.body.prepend(loading);
   // On rend le spinner visible
-  document.body.style.visibility = "visible";
+  document.body.style.visibility = "visible";  try {
+    // Vérification préalable de la structure attendue.
+    // Si `.book` est absente, aucune transformation n'est effectuée.
+    const book = document.querySelector("div.book");
 
-  try {
-	const connexionOK = await verifierConnexionInternet();
-	if (!connexionOK) {
-      console.warn("Connexion Internet indisponible.");
-	  loading.remove();
-      // Arrêter complètement l'initialisation
+    if (!book) {
+      console.warn(
+        "Initialisation DSFR annulée : aucun élément <div class=\"book\"> trouvé."
+      );
       return;
     }
+
+    // Vérification de la connexion avant de poursuivre l'initialisation.
+    const connexionOK = await verifierConnexionInternet();
+
+    if (!connexionOK) {
+      console.warn("Connexion Internet indisponible.");
+      return;
+    }
+
     await initialiserPage();
   } finally {
     loading.remove();
   }
 });
-
-
-
-
-
-
-
-
 
