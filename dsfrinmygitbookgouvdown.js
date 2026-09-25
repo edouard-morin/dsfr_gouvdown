@@ -25,16 +25,6 @@ const ressourcesJS = [
     cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js"
   }
 ];
-const ressourcesJSfilelocal = [
-  {
-    local: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js",
-    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js"
-  }
-];
-const ressourcesJSActives =
-  window.location.protocol === "file:"
-    ? ressourcesJSfilelocal
-    : ressourcesJS;
 
 /**
  * Détermine le theme dark ou light par defaut
@@ -1763,30 +1753,6 @@ function ajouterCorrectionsCSSDSFR() {
 function chargerRessources(ressources, type, options = {}) {
 
   const timeout = options.timeout ?? 10000;
-  
-  if (window.location.protocol === "file:") {
-      ressources.forEach(ressource => {
-        const element =
-          type === "css"
-            ? document.createElement("link")
-            : document.createElement("script");
-    
-        if (type === "css") {
-          element.rel = "stylesheet";
-          element.href = ressource.local;
-        } else {
-          element.src = ressource.local;
-    
-          if (options.module) {
-            element.type = "module";
-          }
-        }
-    
-        document.head.appendChild(element);
-      });
-    
-      return;
-  }
 
   return ressources.reduce(
     (promise, ressource) => {
@@ -1919,8 +1885,12 @@ function chargerRessources(ressources, type, options = {}) {
 
           document.head.appendChild(element);
 
-          // Première tentative : version locale
-          charger(ressource.local);
+          // Première tentative : version locale si protocole http
+          if(window.location.protocol === "file:"){
+              charger(ressource.cdn);
+          }else{
+              charger(ressource.local);
+          }
 
         });
 
@@ -2001,7 +1971,7 @@ async function initialiserPage() {
           ),
         
           chargerRessources(
-            ressourcesJSActives,
+            ressourcesJS,
             "js",
             {
               type: "module",
