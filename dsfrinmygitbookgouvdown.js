@@ -6,48 +6,35 @@ Ce fichier a été développé avec l'assistance d'une intelligence artificielle
 développé sur la version 1.15.3 du dsfr
 License MIT - LICENSE.txt
 */
-const urlbase = new URL(".", window.location.href);
+
 // mes sources css (locales et en ligne)
 const ressourcesCSS = [
   {
-    local: new URL(
-      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.min.css",
-      urlbase
-    ).href,
-
+    local: "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.min.css",
     cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.min.css"
   },
   {
-    local: new URL(
-      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/utility/utility.min.css",
-      urlbase
-    ).href,
-
+    local: "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/utility/utility.min.css",
     cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/utility/utility.min.css"
   }
 ];
 // mes sources js (locales ou en ligne)
 const ressourcesJS = [
   {
-    local: new URL(
-      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.module.min.js",
-      urlbase
-    ).href,
-
+    local: "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.module.min.js",
     cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js"
   }
 ];
-const ressourcesJSNoModule = [
+const ressourcesJSfilelocal = [
   {
-    local: new URL(
-      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.nomodule.min.js",
-      urlbase
-    ).href,
-
-    cdn:
-      "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.nomodule.min.js"
+    local: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js",
+    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js"
   }
 ];
+const ressourcesJSActives =
+  window.location.protocol === "file:"
+    ? ressourcesJSfilelocal
+    : ressourcesJS;
 
 /**
  * Détermine le theme dark ou light par defaut
@@ -104,14 +91,9 @@ const content_footer = (typeof sentence_footer_doc !== "undefined" && sentence_f
   ? sentence_footer_doc.trim()
   : "";
 
-// intégration css correctif de base et spinner
+// intégration css spinner
 document.head.insertAdjacentHTML("beforeend", `
   <style>
-	html {
-	  /*on refixe le rem à 16px */
-	  font-size: 16px;
-	}
-
     #loading {
       position: fixed;
       inset: 0;
@@ -132,36 +114,6 @@ document.head.insertAdjacentHTML("beforeend", `
 
     @keyframes spin {
       to { transform: rotate(360deg); }
-    }
-    .fr-sidemenu--sticky-full-height .fr-sidemenu__inner {
-	  padding-bottom: 1.25rem !important;
-	  padding-top: 1.5rem !important;
-    }
-    .content-editorial {
-	  margin: 1.25rem 0;
-    }
-    .fr-summary {
-	  margin-bottom: 1.5rem;
-    }
-    .fr-sidemenu__title {
-	   display: none !important;
-    }
-    .content-editorial pre {
-    	overflow: auto;
-    	word-wrap: normal;
-    	margin: 0 0 1.275em;
-    	padding: .85em 1em;
-    }
-    .content-editorial code {
-    	padding: .15em;
-    	font-size: .9em;
-    	background-color: var(--background-contrast-grey);
-    }
-    div.sourceCode {
-    	margin-bottom: 0.5rem;
-    }
-    h2 {
-    	margin-top: 1rem !important;
     }
   </style>
 `);
@@ -822,6 +774,218 @@ function transformerMenuDSFR() {
 }
 
 /**
+ * Ajoute une navigation "Chapitre précédent / Chapitre suivant"
+ * à la fin du contenu éditorial.
+ *
+ * Les chapitres sont récupérés dans l'ordre du menu latéral DSFR.
+ * Le bouton précédent pointe vers le chapitre précédent et le bouton
+ * suivant vers le chapitre suivant.
+ *
+ * Le premier chapitre ne possède pas de bouton précédent.
+ * Le dernier chapitre ne possède pas de bouton suivant.
+ *
+ * @returns {void}
+ */
+function ajouterNavigationChapitresDSFR() {
+
+  const contentEditorial = document.querySelector(
+    ".content-editorial"
+  );
+
+  const liensMenu = [
+    ...document.querySelectorAll(
+      ".fr-sidemenu__list > li > a"
+    )
+  ];
+
+  if (!contentEditorial || liensMenu.length === 0) {
+    return;
+  }
+
+  // ---------------------------------------------------------
+  // URL de la page courante
+  // ---------------------------------------------------------
+
+  const urlCourante = new URL(
+    window.location.href
+  );
+
+  // ---------------------------------------------------------
+  // Recherche de la page courante dans le menu
+  // ---------------------------------------------------------
+
+  const indexCourant = liensMenu.findIndex(lien => {
+
+    const href = lien.getAttribute("href");
+
+    if (!href) {
+      return false;
+    }
+
+    try {
+
+      const urlLien = new URL(
+        href,
+        window.location.href
+      );
+
+      return (
+        urlLien.pathname === urlCourante.pathname &&
+        urlLien.search === urlCourante.search &&
+        urlLien.hash === urlCourante.hash
+      );
+
+    } catch (error) {
+
+      return false;
+
+    }
+  });
+
+  // La page courante n'est pas dans le menu
+  if (indexCourant === -1) {
+    return;
+  }
+
+  // ---------------------------------------------------------
+  // Détermination des chapitres précédent et suivant
+  // ---------------------------------------------------------
+
+  const lienPrecedent =
+    indexCourant > 0
+      ? liensMenu[indexCourant - 1]
+      : null;
+
+  const lienSuivant =
+    indexCourant < liensMenu.length - 1
+      ? liensMenu[indexCourant + 1]
+      : null;
+
+  // ---------------------------------------------------------
+  // Création de la navigation
+  // ---------------------------------------------------------
+
+  const navigation = document.createElement("nav");
+
+  navigation.className =
+    "fr-grid-row fr-grid-row--gutters fr-mt-4w";
+
+  navigation.setAttribute(
+    "aria-label",
+    "Navigation entre les chapitres"
+  );
+
+  // ---------------------------------------------------------
+  // Bouton précédent
+  // ---------------------------------------------------------
+
+  if (lienPrecedent) {
+
+    const colonnePrecedent =
+      document.createElement("div");
+
+    colonnePrecedent.className =
+      "fr-col-12 fr-col-md-6";
+
+    const boutonPrecedent =
+      document.createElement("button");
+
+    boutonPrecedent.type = "button";
+
+    boutonPrecedent.className =
+      "fr-btn fr-btn--lg " +
+      "fr-icon-arrow-left-circle-line " +
+      "fr-btn--icon-left fr-btn--tertiary";
+
+    boutonPrecedent.textContent =
+      "Chapitre précédent";
+      
+    boutonPrecedent.setAttribute(
+      "aria-label",
+      `Chapitre précédent : ${lienPrecedent.textContent.trim()}`
+    );
+
+    boutonPrecedent.addEventListener(
+      "click",
+      () => {
+        window.location.href =
+          lienPrecedent.href;
+      }
+    );
+
+    colonnePrecedent.appendChild(
+      boutonPrecedent
+    );
+
+    navigation.appendChild(
+      colonnePrecedent
+    );
+  }
+
+  // ---------------------------------------------------------
+  // Bouton suivant
+  // ---------------------------------------------------------
+
+  if (lienSuivant) {
+
+
+    const colonneSuivant = document.createElement("div");
+    colonneSuivant.className = "fr-col-12 fr-col-md-6";
+    
+    if (!lienPrecedent) {
+      colonneSuivant.classList.add("fr-ml-auto");
+    }
+    
+    colonneSuivant.classList.add(
+      "fr-grid-row",
+      "fr-grid-row--right"
+    );
+
+    const boutonSuivant =
+      document.createElement("button");
+
+    boutonSuivant.type = "button";
+
+    boutonSuivant.className =
+      "fr-btn fr-btn--lg " +
+      "fr-icon-arrow-right-circle-line " +
+      "fr-btn--icon-right fr-btn--tertiary";
+
+    boutonSuivant.textContent =
+      "Chapitre suivant";
+      
+    boutonSuivant.setAttribute(
+      "aria-label",
+      `Chapitre suivant : ${lienSuivant.textContent.trim()}`
+    );
+
+    boutonSuivant.addEventListener(
+      "click",
+      () => {
+        window.location.href =
+          lienSuivant.href;
+      }
+    );
+
+    colonneSuivant.appendChild(
+      boutonSuivant
+    );
+
+    navigation.appendChild(
+      colonneSuivant
+    );
+  }
+
+  // ---------------------------------------------------------
+  // Ajout à la fin du contenu éditorial
+  // ---------------------------------------------------------
+
+  contentEditorial.appendChild(
+    navigation
+  );
+}
+
+/**
  * Transforme le corps gouvdown en colonne éditoriale DSFR.
  */
 function transformerCorpsDSFR() {
@@ -913,6 +1077,9 @@ function transformerCorpsDSFR() {
    * Suppression de l'ancien corps
    */
   document.querySelector(".book-body")?.remove();
+  
+  // Navigation entre les chapitres
+  ajouterNavigationChapitresDSFR();
   
   /*
    * changement des blockquotes pour des highlight
@@ -1414,6 +1581,43 @@ function ajouterCorrectionsCSSDSFR() {
 
   style.textContent = `
     /* =====================================================
+       Bases et ajustements
+       ===================================================== */
+    html {
+	  /*on refixe le rem à 16px */
+	  font-size: 16px;
+	}
+    .fr-sidemenu--sticky-full-height .fr-sidemenu__inner {
+	  padding-bottom: 1.25rem !important;
+	  padding-top: 1.5rem !important;
+    }
+    .content-editorial {
+	  margin: 1.25rem 0;
+    }
+    .fr-summary {
+	  margin-bottom: 1.5rem;
+    }
+    .fr-sidemenu__title {
+	   display: none !important;
+    }
+    .content-editorial pre {
+    	overflow: auto;
+    	word-wrap: normal;
+    	margin: 0 0 1.275em;
+    	padding: .85em 1em;
+    }
+    .content-editorial code {
+    	padding: .15em;
+    	font-size: .9em;
+    	background-color: var(--background-contrast-grey);
+    }
+    div.sourceCode {
+    	margin-bottom: 0.5rem;
+    }
+    h2 {
+    	margin-top: 1rem !important;
+    }
+    /* =====================================================
        Couleurs générales
        ===================================================== */
 
@@ -1519,17 +1723,6 @@ function ajouterCorrectionsCSSDSFR() {
 
 
     /* =====================================================
-       Citations
-       ===================================================== */
-
-    .content-editorial blockquote {
-      color: var(--text-default-grey);
-      background-color: var(--background-alt-grey);
-      border-left-color: var(--border-default-grey);
-    }
-
-
-    /* =====================================================
        Séparateurs
        ===================================================== */
 
@@ -1543,13 +1736,9 @@ function ajouterCorrectionsCSSDSFR() {
 }
 
 /**
- * Charge une ou plusieurs feuilles de style CSS ou 
- * un ou plusieurs fichiers JavaScript dans `<head>`, séquentiellement.
- */
-/**
- * Charge une liste de ressources en privilégiant la version locale.
+ * Charge une liste de ressources en privilégiant la version locale (sur serveur).
  *
- * Si la ressource locale échoue et qu'une connexion Internet est disponible,
+ * Si la ressource locale sur serveur échoue et qu'une connexion Internet est disponible,
  * la version CDN est utilisée comme solution de secours.
  *
  * Les ressources sont chargées séquentiellement.
@@ -1574,6 +1763,30 @@ function ajouterCorrectionsCSSDSFR() {
 function chargerRessources(ressources, type, options = {}) {
 
   const timeout = options.timeout ?? 10000;
+  
+  if (window.location.protocol === "file:") {
+      ressources.forEach(ressource => {
+        const element =
+          type === "css"
+            ? document.createElement("link")
+            : document.createElement("script");
+    
+        if (type === "css") {
+          element.rel = "stylesheet";
+          element.href = ressource.local;
+        } else {
+          element.src = ressource.local;
+    
+          if (options.module) {
+            element.type = "module";
+          }
+        }
+    
+        document.head.appendChild(element);
+      });
+    
+      return;
+  }
 
   return ressources.reduce(
     (promise, ressource) => {
@@ -1718,6 +1931,7 @@ function chargerRessources(ressources, type, options = {}) {
   );
 }
 
+
 /**
  * Orchestre l'ensemble de la transformation gouvdown vers DSFR ; une div `.book` est indispensable.
  */
@@ -1777,34 +1991,24 @@ async function initialiserPage() {
   // fin. Charger le CSS et le JS DSFR
   // Chargement du CSS et du JS DSFR
     try {
-      await Promise.all([
-        chargerRessources(
-          ressourcesCSS,
-          "css",
-          {
-            timeout: 10000
-          }
-        ),
-        chargerRessources(
-          ressourcesJS,
-          "js",
-          {
-            type: "module",
-            timeout: 10000
-          }
-        )
-        /*
-        ,
-        chargerRessources(
-          ressourcesJSNoModule,
-          "js",
-          {
-            type: "nomodule",
-            timeout: 10000
-          }
-        )
-        */
-      ]);
+        await Promise.all([
+          chargerRessources(
+            ressourcesCSS,
+            "css",
+            {
+              timeout: 10000
+            }
+          ),
+        
+          chargerRessources(
+            ressourcesJSActives,
+            "js",
+            {
+              type: "module",
+              timeout: 10000
+            }
+          )
+        ]);
     
     } catch (error) {
       console.error(
