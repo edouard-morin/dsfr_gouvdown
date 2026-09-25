@@ -1,27 +1,91 @@
 /*
 dsfrinmygitbookgouvdown.js
+librairie js permettant de transformer un gitbook bookdown en site dsfr
 Copyright (c) 2026, DREAL Pdl, Edouard MORIN
 Ce fichier a été développé avec l'assistance d'une intelligence artificielle.
+développé sur la version 1.15.3 du dsfr
 License MIT - LICENSE.txt
 */
-// développé avec la version 1.15.3 du dsfr
-const urlcssdsfr = ["https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.min.css","https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/utility/utility.min.css"];
-const urljsdsfr = "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js";
-const urljsdsfr_nomodule = "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.nomodule.min.js";
+const urlbase = new URL(".", window.location.href);
+// mes sources css (locales et en ligne)
+const ressourcesCSS = [
+  {
+    local: new URL(
+      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.min.css",
+      urlbase
+    ).href,
+
+    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.min.css"
+  },
+  {
+    local: new URL(
+      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/utility/utility.min.css",
+      urlbase
+    ).href,
+
+    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/utility/utility.min.css"
+  }
+];
+// mes sources js (locales ou en ligne)
+const ressourcesJS = [
+  {
+    local: new URL(
+      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.module.min.js",
+      urlbase
+    ).href,
+
+    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js"
+  }
+];
+const ressourcesJSNoModule = [
+  {
+    local: new URL(
+      "libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.nomodule.min.js",
+      urlbase
+    ).href,
+
+    cdn:
+      "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.nomodule.min.js"
+  }
+];
+
+/**
+ * Détermine le theme dark ou light par defaut
+ */
+function definirScheme() {
+  const scheme = localStorage.getItem("scheme");
+
+  if (scheme === "dark" || scheme === "light") {
+    return scheme;
+  }
+
+  // Si le choix est "system", on regarde la préférence du système
+  if (scheme === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+
+  // Aucun choix enregistré : on utilise la préférence système
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
 // création d'un élément spinner en attentandant la refonte du html
 const loading = document.createElement("div");
 loading.id = "loading";
 loading.innerHTML = `<div class="spinner"></div>`;
-
+const scheme = definirScheme();
+loading.style.backgroundColor =
+  scheme === "dark"
+    ? "#161616"
+    : "#E5E5E5";
 // récupération variables
 const logo = (typeof intitule_logo !== "undefined" && intitule_logo.trim() !== "")
   ? intitule_logo.replace(/\n/g, "<br>")
   : "République <br>Française";
 /**
  * Détermine le titre principal de la page à partir de `titre_doc` ou de `<title>`.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function definirTitre() {
   const titrePage =
@@ -40,6 +104,7 @@ const content_footer = (typeof sentence_footer_doc !== "undefined" && sentence_f
   ? sentence_footer_doc.trim()
   : "";
 
+// intégration css correctif de base et spinner
 document.head.insertAdjacentHTML("beforeend", `
   <style>
 	html {
@@ -53,7 +118,6 @@ document.head.insertAdjacentHTML("beforeend", `
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #E5E5E5;
       z-index: 9999;
     }
 
@@ -88,13 +152,10 @@ document.head.insertAdjacentHTML("beforeend", `
     	margin: 0 0 1.275em;
     	padding: .85em 1em;
     }
-    .content-editorial .fa {
-    	display: inline-block;
-    	font: normal normal normal 14px/1 FontAwesome;
-    	font-size: inherit;
-    	text-rendering: auto;
-    	-webkit-font-smoothing: antialiased;
-    	-moz-osx-font-smoothing: grayscale;
+    .content-editorial code {
+    	padding: .15em;
+    	font-size: .9em;
+    	background-color: var(--background-contrast-grey);
     }
     div.sourceCode {
     	margin-bottom: 0.5rem;
@@ -106,45 +167,7 @@ document.head.insertAdjacentHTML("beforeend", `
 `);
 
 /**
- * Vérifie que la connexion Internet est disponible et que la ressource DSFR principale peut être jointe.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
- */
-async function verifierConnexionInternet(timeout = 5000) {
-  if (!navigator.onLine) {
-    return false;
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    await fetch(
-      urlcssdsfr[0],
-      {
-        method: "HEAD",
-        cache: "no-store",
-        signal: controller.signal
-      }
-    );
-
-    return true;
-
-  } catch (error) {
-    console.warn("Vérification de connexion impossible :", error);
-    return false;
-
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/**
  * Désactive les anciennes feuilles de style gouvdown et GitBook pour éviter les conflits avec le DSFR.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function desactiverDefaultCSS() {
   document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
@@ -159,9 +182,6 @@ function desactiverDefaultCSS() {
 
 /**
  * Configure la langue du document et le mode de gestion du thème DSFR.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function configurerBaliseHTML() {
   document.documentElement.setAttribute("lang", "fr");
@@ -170,9 +190,6 @@ function configurerBaliseHTML() {
 
 /**
  * Ajoute la métadonnée Open Graph indiquant que le document est en français.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterMetaOpenGraph() {
   // Éviter les doublons
@@ -188,10 +205,7 @@ function ajouterMetaOpenGraph() {
 }
 
 /**
- * Ajoute les liens d'accès rapide DSFR en début de `<body>`.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
+ * Ajoute les liens d'évitement DSFR en début de `<body>`.
  */
 function ajouterSkiplinksDSFR() {
   // Éviter les doublons
@@ -227,9 +241,6 @@ function ajouterSkiplinksDSFR() {
 
 /**
  * Construit et ajoute l'en-tête DSFR avec le logo, le titre et le sous-titre.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterHeaderDSFR() {
   // Éviter les doublons
@@ -293,9 +304,6 @@ let liensFooter = [];
 
 /**
  * Répartit les liens complémentaires du sommaire entre le header et le footer.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterLiensHeaderDSFR() {
   const headerBrand = document.querySelector(".fr-header__brand");
@@ -510,9 +518,6 @@ function ajouterLiensHeaderDSFR() {
 
 /**
  * Transforme le conteneur gouvdown `.book` en structure principale DSFR.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function transformerBookEnMain() {
   const book = document.querySelector(".book");
@@ -551,9 +556,6 @@ let sommairePage = "";
 
 /**
  * Transforme `ul.summary` en menu latéral DSFR et prépare le sommaire de la page courante.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function transformerMenuDSFR() {
   const summary = document.querySelector("ul.summary");
@@ -615,10 +617,7 @@ function transformerMenuDSFR() {
     ".fr-sidemenu__list"
   );
 
-  const urlCourante = new URL(
-    window.location.href,
-    window.location.origin
-  );
+  const urlCourante = new URL(window.location.href);
 
   function estPageCourante(href) {
     if (!href) {
@@ -824,9 +823,6 @@ function transformerMenuDSFR() {
 
 /**
  * Transforme le corps gouvdown en colonne éditoriale DSFR.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function transformerCorpsDSFR() {
   const bodyInner = document.querySelector(".book-body > .body-inner");
@@ -935,9 +931,6 @@ function transformerCorpsDSFR() {
 
 /**
  * Ajuste à 100 % les images du contenu éditorial qui dépassent sa largeur.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajusterLargeurImages() {
   const contentEditorial = document.querySelector(".content-editorial");
@@ -969,9 +962,6 @@ function ajusterLargeurImages() {
 
 /**
  * Crée le pied de page DSFR à partir des informations de configuration.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function creerFooterDSFR() {
   const book = document.querySelector("main");
@@ -1100,9 +1090,6 @@ function creerFooterDSFR() {
 
 /**
  * Ajoute au footer les liens précédemment mémorisés dans `liensFooter`.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterLiensFooterDSFR() {
   const listeFooter = document.querySelector(
@@ -1130,9 +1117,6 @@ function ajouterLiensFooterDSFR() {
 
 /**
  * Crée la modale DSFR permettant de choisir le thème clair, sombre ou système.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterModaleThemeDSFR() {
   // Ne pas créer la modale si elle existe déjà
@@ -1302,9 +1286,6 @@ function ajouterModaleThemeDSFR() {
 
 /**
  * Ajoute le bouton « Paramètres d'affichage » au footer.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterBoutonThemeDSFR() {
   const listeFooter = document.querySelector(
@@ -1341,9 +1322,6 @@ function ajouterBoutonThemeDSFR() {
 
 /**
  * Remplace les anciennes icônes Font Awesome « copy » par leur équivalent DSFR.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function remplacerIconesCopyDSFR() {
   document.querySelectorAll("i.fa.fa-copy").forEach(icone => {
@@ -1360,9 +1338,6 @@ function remplacerIconesCopyDSFR() {
 
 /**
  * Supprime les éléments gouvdown devenus inutiles après la transformation DSFR.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function nettoyerElementsPage() {
   // Supprimer le premier <li> de <ul class="summary">
@@ -1396,9 +1371,6 @@ function nettoyerElementsPage() {
 
 /**
  * Ajoute un texte alternatif aux images qui n'en possèdent pas.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterAltImages() {
   const contentEditorial = document.querySelector(".content-editorial");
@@ -1431,9 +1403,6 @@ function ajouterAltImages() {
 
 /**
  * Injecte les corrections CSS nécessaires à la compatibilité du contenu gouvdown avec le DSFR.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 function ajouterCorrectionsCSSDSFR() {
   if (document.getElementById("dsfr-gouvdown-overrides")) {
@@ -1492,6 +1461,10 @@ function ajouterCorrectionsCSSDSFR() {
     .content-editorial pre code.sourceCode .co {
       color: var(--text-mention-grey);
     }
+    
+    .content-editorial pre code.sourceCode .cn {
+      color: var(--text-action-high-red-marianne);
+    }
 
     .content-editorial pre code.sourceCode .kw {
       color: var(--text-action-high-blue-france);
@@ -1503,6 +1476,10 @@ function ajouterCorrectionsCSSDSFR() {
     
     .content-editorial pre code.sourceCode .at {
       color: var(--text-action-high-green-bourgeon);
+    }
+    
+    .content-editorial pre code.sourceCode .ot {
+      color: var(--text-action-high-green-emeraude);
     }
 
     .content-editorial pre code.sourceCode .st {
@@ -1566,103 +1543,183 @@ function ajouterCorrectionsCSSDSFR() {
 }
 
 /**
- * Charge une ou plusieurs feuilles de style CSS dans `<head>`, séquentiellement.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
+ * Charge une ou plusieurs feuilles de style CSS ou 
+ * un ou plusieurs fichiers JavaScript dans `<head>`, séquentiellement.
  */
-function chargerCSS(urls, timeout = 10000) {
-  if (!Array.isArray(urls)) {
-    urls = [urls];
-  }
-
-  return urls.reduce((promise, url) => {
-    return promise.then(() => {
-      return new Promise((resolve, reject) => {
-        const link = document.createElement("link");
-
-        link.rel = "stylesheet";
-        link.href = url;
-
-        const timer = setTimeout(() => {
-          reject(
-            new Error(`Timeout lors du chargement du CSS : ${url}`)
-          );
-        }, timeout);
-
-        link.onload = () => {
-          clearTimeout(timer);
-          resolve();
-        };
-
-        link.onerror = () => {
-          clearTimeout(timer);
-          reject(
-            new Error(`Impossible de charger le CSS : ${url}`)
-          );
-        };
-
-        document.head.appendChild(link);
-      });
-    });
-  }, Promise.resolve());
-}
-
 /**
- * Charge un ou plusieurs fichiers JavaScript dans `<head>`, séquentiellement.
+ * Charge une liste de ressources en privilégiant la version locale.
  *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
+ * Si la ressource locale échoue et qu'une connexion Internet est disponible,
+ * la version CDN est utilisée comme solution de secours.
+ *
+ * Les ressources sont chargées séquentiellement.
+ *
+ * @param {Array} ressources
+ *   Tableau contenant les URLs locales et CDN.
+ *
+ * @param {"css"|"js"} type
+ *   Type de ressource à charger.
+ *
+ * @param {Object} options
+ *   Options de chargement.
+ *
+ * @param {string} options.type
+ *   Type du script JavaScript, notamment "module" ou "nomodule".
+ *
+ * @param {number} options.timeout
+ *   Temps maximal d'attente pour une ressource.
+ *
+ * @returns {Promise<void>}
  */
-function chargerJS(urls, options = {}, timeout = 10000) {
-  if (!Array.isArray(urls)) {
-    urls = [urls];
-  }
+function chargerRessources(ressources, type, options = {}) {
 
-  return urls.reduce((promise, url) => {
-    return promise.then(() => {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement("script");
+  const timeout = options.timeout ?? 10000;
 
-        script.src = url;
+  return ressources.reduce(
+    (promise, ressource) => {
 
-        if (options.type) {
-          if (options.type === "nomodule") {
-            script.nomodule = "";
-          } else {
-            script.type = options.type;
+      return promise.then(() => {
+
+        return new Promise((resolve, reject) => {
+
+          const element =
+            type === "css"
+              ? document.createElement("link")
+              : document.createElement("script");
+
+          // -------------------------------------------------
+          // Configuration de l'élément
+          // -------------------------------------------------
+
+          if (type === "css") {
+            element.rel = "stylesheet";
           }
-        }
 
-        const timer = setTimeout(() => {
-          reject(
-            new Error(`Timeout lors du chargement du JavaScript : ${url}`)
-          );
-        }, timeout);
+          if (type === "js" && options.type) {
 
-        script.onload = () => {
-          clearTimeout(timer);
-          resolve();
-        };
+            if (options.type === "nomodule") {
+              element.nomodule = true;
+            } else {
+              element.type = options.type;
+            }
 
-        script.onerror = () => {
-          clearTimeout(timer);
-          reject(
-            new Error(`Impossible de charger le JavaScript : ${url}`)
-          );
-        };
+          }
 
-        document.head.appendChild(script);
+          let tentative = 0;
+          let timer = null;
+
+          // -------------------------------------------------
+          // Chargement d'une URL
+          // -------------------------------------------------
+
+          function charger(url) {
+
+            tentative++;
+
+            if (type === "css") {
+              element.href = url;
+            } else {
+              element.src = url;
+            }
+
+            timer = setTimeout(() => {
+
+              // Si la ressource locale expire et qu'Internet
+              // est disponible, on tente le CDN.
+              if (
+                tentative === 1 &&
+                ressource.cdn &&
+                navigator.onLine
+              ) {
+
+                console.warn(
+                  `Timeout lors du chargement local : ${url}. ` +
+                  `Tentative avec le CDN.`
+                );
+
+                charger(ressource.cdn);
+
+                return;
+              }
+
+              reject(
+                new Error(
+                  `Timeout lors du chargement de la ressource : ${url}`
+                )
+              );
+
+            }, timeout);
+          }
+
+          // -------------------------------------------------
+          // Chargement réussi
+          // -------------------------------------------------
+
+          element.onload = () => {
+
+            clearTimeout(timer);
+
+            console.log(
+              `${type.toUpperCase()} chargé :`,
+              type === "css"
+                ? element.href
+                : element.src
+            );
+
+            resolve();
+          };
+
+          // -------------------------------------------------
+          // Erreur de chargement
+          // -------------------------------------------------
+
+          element.onerror = () => {
+
+            clearTimeout(timer);
+
+            // Première tentative = ressource locale
+            // Deuxième tentative = CDN
+            if (
+              tentative === 1 &&
+              ressource.cdn &&
+              navigator.onLine
+            ) {
+
+              console.warn(
+                `Ressource locale indisponible : ` +
+                `${ressource.local}. ` +
+                `Utilisation du CDN.`
+              );
+
+              charger(ressource.cdn);
+
+              return;
+            }
+
+            reject(
+              new Error(
+                `Impossible de charger la ressource : ` +
+                `${ressource.local}`
+              )
+            );
+          };
+
+          document.head.appendChild(element);
+
+          // Première tentative : version locale
+          charger(ressource.local);
+
+        });
+
       });
-    });
-  }, Promise.resolve());
+
+    },
+    Promise.resolve()
+  );
 }
 
 /**
  * Orchestre l'ensemble de la transformation gouvdown vers DSFR ; une div `.book` est indispensable.
- *
- * @returns {void|Promise<void>|Promise<boolean>|boolean|string} Résultat de la fonction
- * ou modification directe du DOM selon la fonction.
  */
 async function initialiserPage() {
 
@@ -1718,11 +1775,37 @@ async function initialiserPage() {
   nettoyerElementsPage();
 
   // fin. Charger le CSS et le JS DSFR
+  // Chargement du CSS et du JS DSFR
     try {
       await Promise.all([
-        chargerCSS(urlcssdsfr),
-        chargerJS(urljsdsfr, { type: "module" })
+        chargerRessources(
+          ressourcesCSS,
+          "css",
+          {
+            timeout: 10000
+          }
+        ),
+        chargerRessources(
+          ressourcesJS,
+          "js",
+          {
+            type: "module",
+            timeout: 10000
+          }
+        )
+        /*
+        ,
+        chargerRessources(
+          ressourcesJSNoModule,
+          "js",
+          {
+            type: "nomodule",
+            timeout: 10000
+          }
+        )
+        */
       ]);
+    
     } catch (error) {
       console.error(
         "Impossible de charger complètement le DSFR :",
@@ -1741,46 +1824,85 @@ async function initialiserPage() {
   return true;
 }
 
+/**
+ * Retire le spinner de chargement s'il est encore présent.
+ */
+function retirerLoading() {
+  if (loading.isConnected) {
+    loading.remove();
+  }
+}
 
 // Point d'entrée : attend que le DOM soit disponible, affiche le spinner,
 // vérifie les prérequis puis lance la transformation complète.
 document.addEventListener("DOMContentLoaded", async () => {
+
   document.body.prepend(loading);
-  // On rend le spinner visible
-  document.body.style.visibility = "visible";  
+
+  // Heure de début du spinner
+  const debutSpinner = performance.now();
+
+  // Le contenu de la page reste visible pendant l'initialisation
+  document.body.style.visibility = "visible";
+
+  // ---------------------------------------------------------
+  // Sécurité : le spinner ne doit jamais rester plus de 11 s
+  // ---------------------------------------------------------
+
   const timeoutSpinner = setTimeout(() => {
+
     console.warn(
       "Temps maximal d'initialisation dépassé. " +
-      "Le spinner est retiré pour afficher la page."
+      "Le spinner est retiré."
     );
 
-    loading.remove();
-  }, 15000);
-  
+    retirerLoading();
+
+  }, 11000);
+
   try {
-    // Vérification préalable de la structure attendue.
-    // Si `.book` est absente, aucune transformation n'est effectuée.
+
+    // Vérification de la structure gouvdown
     const book = document.querySelector("div.book");
 
     if (!book) {
+
       console.warn(
-        "Initialisation DSFR annulée : aucun élément <div class=\"book\"> trouvé."
+        "Initialisation DSFR annulée : " +
+        "aucun élément <div class=\"book\"> trouvé."
       );
+
       return;
     }
 
-    // Vérification de la connexion avant de poursuivre l'initialisation.
-    const connexionOK = await verifierConnexionInternet();
-
-    if (!connexionOK) {
-      console.warn("Connexion Internet indisponible.");
-      return;
-    }
-
+    // Initialisation complète
     await initialiserPage();
+
+  } catch (error) {
+
+    console.error(
+      "Erreur lors de l'initialisation DSFR :",
+      error
+    );
+
   } finally {
+
     clearTimeout(timeoutSpinner);
-    loading.remove();
+
+    // -------------------------------------------------------
+    // Garantir au moins 1 seconde d'affichage du spinner
+    // -------------------------------------------------------
+
+    const tempsEcoule =
+      performance.now() - debutSpinner;
+
+    const tempsRestant =
+      Math.max(0, 300 - tempsEcoule);
+
+    setTimeout(
+      retirerLoading,
+      tempsRestant
+    );
   }
 });
 
