@@ -10,14 +10,38 @@ License MIT - LICENSE.txt
 const estLocal =
   window.location.protocol === "file:";
 
-// mes sources css (locales et CDN)
+// mes sources css (locales )
 const ressourcesCSS = ["./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dist/dsfr.min.css",
     "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dist/utility/utility.min.css"];
 const ressourcesCSSCDN = ["https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr_1_15_min/dist/dsfr.min.css",
     "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr_1_15_min/dist/utility/utility.min.css"];
-// mes sources js (locales et CDN)
+// mes sources js (locales)
 const ressourcesJS = ["./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dist/dsfr.module.min.js"];
 const ressourcesJSCDN  = ["https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr_1_15_min/dist/dsfr.module.min.js"];
+
+/**
+ * Récupère les méthadonnées pour header et footer
+ */
+function recupererMetadonneesDSFR() {
+
+  const recuperer = nom => {
+    return (
+      document
+        .querySelector(`meta[property="gd_dsfr:${nom}"]`)
+        ?.getAttribute("content")
+        ?.trim() || ""
+    );
+  };
+
+  return {
+    intitule_logo: recuperer("intitule_logo"),
+    titre_doc: recuperer("titre_doc"),
+    sous_titre_doc: recuperer("sous_titre_doc"),
+    sentence_footer_doc: recuperer("sentence_footer_doc")
+  };
+}
+
+const metadonneesDSFR = recupererMetadonneesDSFR();
 
 /**
  * Détermine le theme dark ou light par defaut
@@ -51,8 +75,8 @@ loading.style.backgroundColor =
     ? "#161616"
     : "#E5E5E5";
 // récupération variables
-const logo = (typeof intitule_logo !== "undefined" && intitule_logo.trim() !== "")
-  ? intitule_logo.replace(/\n/g, "<br>")
+const logo = (typeof metadonneesDSFR !== "undefined" && metadonneesDSFR.intitule_logo.trim() !== "")
+  ? metadonneesDSFR.intitule_logo.replace(/\n/g, "<br>")
   : "République <br>Française";
 /**
  * Détermine le titre principal de la page à partir de `titre_doc` ou de `<title>`.
@@ -61,17 +85,17 @@ function definirTitre() {
   const titrePage =
     document.querySelector("head > title")?.textContent.trim() || "";
 
-  return (typeof titre_doc !== "undefined" ? titre_doc?.trim() : "") ||
+  return (typeof metadonneesDSFR !== "undefined" ? metadonneesDSFR.titre_doc?.trim() : "") ||
     (titrePage.includes("|")
       ? titrePage.split("|").slice(1).join("|").trim()
       : titrePage);
 }
 const titre = definirTitre();
-const sous_titre = (typeof sous_titre_doc !== "undefined" && sous_titre_doc.trim() !== "")
-  ? sous_titre_doc.trim()
+const sous_titre = (typeof metadonneesDSFR !== "undefined" && metadonneesDSFR.sous_titre_doc.trim() !== "")
+  ? metadonneesDSFR.sous_titre_doc.trim()
   : "";
-const content_footer = (typeof sentence_footer_doc !== "undefined" && sentence_footer_doc.trim() !== "")
-  ? sentence_footer_doc.trim()
+const content_footer = (typeof metadonneesDSFR !== "undefined" && metadonneesDSFR.sentence_footer_doc.trim() !== "")
+  ? metadonneesDSFR.sentence_footer_doc.trim()
   : "";
 
 // intégration css spinner
