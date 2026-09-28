@@ -7,24 +7,17 @@ développé sur la version 1.15.3 du dsfr
 License MIT - LICENSE.txt
 */
 
-// mes sources css (locales et en ligne)
-const ressourcesCSS = [
-  {
-    local: "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.min.css",
-    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.min.css"
-  },
-  {
-    local: "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/utility/utility.min.css",
-    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/utility/utility.min.css"
-  }
-];
-// mes sources js (locales ou en ligne)
-const ressourcesJS = [
-  {
-    local: "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dsfr.module.min.js",
-    cdn: "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr.module.min.js"
-  }
-];
+const estLocal =
+  window.location.protocol === "file:";
+
+// mes sources css (locales et CDN)
+const ressourcesCSS = ["./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dist/dsfr.min.css",
+    "./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dist/utility/utility.min.css"];
+const ressourcesCSSCDN = ["https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr_1_15_min/dist/dsfr.min.css",
+    "https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr_1_15_min/dist/utility/utility.min.css"];
+// mes sources js (locales et CDN)
+const ressourcesJS = ["./libs/gouvdown-default-0.0.0.9001/dsfr_1_15_min/dist/dsfr.module.min.js"];
+const ressourcesJSCDN  = ["https://cdn.jsdelivr.net/gh/edouard-morin/dsfr_gouvdown@main/dsfr_1_15_min/dist/dsfr.module.min.js"];
 
 /**
  * Détermine le theme dark ou light par defaut
@@ -1726,7 +1719,7 @@ function ajouterCorrectionsCSSDSFR() {
 }
 
 /**
- * Charge une liste de ressources en privilégiant la version locale (sur serveur).
+ * Charge une liste de ressources locales (css ou js).
  *
  * Si la ressource locale sur serveur échoue et qu'une connexion Internet est disponible,
  * la version CDN est utilisée comme solution de secours.
@@ -1752,145 +1745,108 @@ function ajouterCorrectionsCSSDSFR() {
  */
 function chargerRessources(ressources, type, options = {}) {
 
-  const timeout = options.timeout ?? 10000;
+  // Une chaîne devient un tableau d'une seule ressource
+  const listeRessources =
+    Array.isArray(ressources)
+      ? ressources
+      : [ressources];
 
-  return ressources.reduce(
+  const estModule = options.module ?? false;
+
+  // -------------------------------------------------------
+  // Création d'un élément de ressource
+  // -------------------------------------------------------
+
+  function creerElement(ressource) {
+
+    let element;
+
+    if (type === "css") {
+
+      element = document.createElement("link");
+
+      element.rel = "stylesheet";
+      element.href = ressource;
+
+    } else if (type === "js") {
+
+      element = document.createElement("script");
+
+      element.src = ressource;
+
+      if (estModule) {
+        element.type = "module";
+      }
+
+    } else {
+
+      throw new Error(
+        `Type de ressource inconnu : ${type}`
+      );
+
+    }
+
+    return element;
+  }
+
+  // -------------------------------------------------------
+  // Cas file:
+  //
+  // Firefox peut déclencher onerror pour un script local
+  // alors que celui-ci a bien été chargé.
+  // On ne fait donc aucun contrôle du chargement.
+  // -------------------------------------------------------
+
+  if (window.location.protocol === "file:") {
+
+    listeRessources.forEach(ressource => {
+
+      const element = creerElement(ressource);
+
+      document.head.appendChild(element);
+
+    });
+
+    return;
+  }
+
+  // -------------------------------------------------------
+  // Cas http: / https:
+  //
+  // On contrôle réellement le chargement.
+  // -------------------------------------------------------
+
+  return listeRessources.reduce(
     (promise, ressource) => {
 
       return promise.then(() => {
 
         return new Promise((resolve, reject) => {
 
-          const element =
-            type === "css"
-              ? document.createElement("link")
-              : document.createElement("script");
-
-          // -------------------------------------------------
-          // Configuration de l'élément
-          // -------------------------------------------------
-
-          if (type === "css") {
-            element.rel = "stylesheet";
-          }
-
-          if (type === "js" && options.type) {
-
-            if (options.type === "nomodule") {
-              element.nomodule = true;
-            } else {
-              element.type = options.type;
-            }
-
-          }
-
-          let tentative = 0;
-          let timer = null;
-
-          // -------------------------------------------------
-          // Chargement d'une URL
-          // -------------------------------------------------
-
-          function charger(url) {
-
-            tentative++;
-
-            if (type === "css") {
-              element.href = url;
-            } else {
-              element.src = url;
-            }
-
-            timer = setTimeout(() => {
-
-              // Si la ressource locale expire et qu'Internet
-              // est disponible, on tente le CDN.
-              if (
-                tentative === 1 &&
-                ressource.cdn &&
-                navigator.onLine
-              ) {
-
-                console.warn(
-                  `Timeout lors du chargement local : ${url}. ` +
-                  `Tentative avec le CDN.`
-                );
-
-                charger(ressource.cdn);
-
-                return;
-              }
-
-              reject(
-                new Error(
-                  `Timeout lors du chargement de la ressource : ${url}`
-                )
-              );
-
-            }, timeout);
-          }
-
-          // -------------------------------------------------
-          // Chargement réussi
-          // -------------------------------------------------
+          const element = creerElement(ressource);
 
           element.onload = () => {
 
-            clearTimeout(timer);
-
             console.log(
               `${type.toUpperCase()} chargé :`,
-              type === "css"
-                ? element.href
-                : element.src
+              ressource
             );
 
             resolve();
-          };
 
-          // -------------------------------------------------
-          // Erreur de chargement
-          // -------------------------------------------------
+          };
 
           element.onerror = () => {
 
-            clearTimeout(timer);
-
-            // Première tentative = ressource locale
-            // Deuxième tentative = CDN
-            if (
-              tentative === 1 &&
-              ressource.cdn &&
-              navigator.onLine
-            ) {
-
-              console.warn(
-                `Ressource locale indisponible : ` +
-                `${ressource.local}. ` +
-                `Utilisation du CDN.`
-              );
-
-              charger(ressource.cdn);
-
-              return;
-            }
-
             reject(
               new Error(
-                `Impossible de charger la ressource : ` +
-                `${ressource.local}`
+                `Impossible de charger la ressource : ${ressource}`
               )
             );
+
           };
 
           document.head.appendChild(element);
-
-          // Première tentative : version locale si protocole http
-          if(window.location.protocol === "file:"){
-              charger(ressource.cdn);
-          }else{
-              charger(ressource.local);
-          }
 
         });
 
@@ -1960,27 +1916,32 @@ async function initialiserPage() {
 
   // fin. Charger le CSS et le JS DSFR
   // Chargement du CSS et du JS DSFR
+
     try {
-        await Promise.all([
-          chargerRessources(
-            ressourcesCSS,
-            "css",
-            {
-              timeout: 10000
-            }
-          ),
-        
-          chargerRessources(
-            ressourcesJS,
-            "js",
-            {
-              type: "module",
-              timeout: 10000
-            }
-          )
-        ]);
+    
+      await Promise.all([
+    
+        chargerRessources(
+          estLocal
+            ? ressourcesCSSCDN
+            : ressourcesCSS,
+          "css"
+        ),
+    
+        chargerRessources(
+          estLocal
+            ? ressourcesJSCDN
+            : ressourcesJS,
+          "js",
+          {
+            module: true
+          }
+        )
+    
+      ]);
     
     } catch (error) {
+    
       console.error(
         "Impossible de charger complètement le DSFR :",
         error
@@ -2007,6 +1968,45 @@ function retirerLoading() {
   }
 }
 
+/**
+ * Vérification de disponibilité des ressources DSFR. sinon on ne fait rien !
+ */
+function ressourcesDisponibles() {
+
+  // ---------------------------------------------------------
+  // Protocole file:
+  // CSS DSFR sur le CDN
+  // ---------------------------------------------------------
+
+  if (window.location.protocol === "file:") {
+
+    return fetch(
+      ressourcesCSSCDN[0],
+      {
+        method: "HEAD",
+        cache: "no-store"
+      }
+    )
+      .then(response => response.ok)
+      .catch(() => false);
+  }
+
+  // ---------------------------------------------------------
+  // Protocoles http: / https:
+  // CSS DSFR local
+  // ---------------------------------------------------------
+
+  return fetch(
+    ressourcesCSS[0],
+    {
+      method: "HEAD",
+      cache: "no-store"
+    }
+  )
+    .then(response => response.ok)
+    .catch(() => false);
+}
+
 // Point d'entrée : attend que le DOM soit disponible, affiche le spinner,
 // vérifie les prérequis puis lance la transformation complète.
 document.addEventListener("DOMContentLoaded", async () => {
@@ -2016,40 +2016,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Heure de début du spinner
   const debutSpinner = performance.now();
 
-  // Le contenu de la page reste visible pendant l'initialisation
-  document.body.style.visibility = "visible";
-
-  // ---------------------------------------------------------
-  // Sécurité : le spinner ne doit jamais rester plus de 11 s
-  // ---------------------------------------------------------
-
-  const timeoutSpinner = setTimeout(() => {
-
-    console.warn(
-      "Temps maximal d'initialisation dépassé. " +
-      "Le spinner est retiré."
-    );
-
-    retirerLoading();
-
-  }, 11000);
-
   try {
 
-    // Vérification de la structure gouvdown
-    const book = document.querySelector("div.book");
+    const ressourcesOK =
+      await ressourcesDisponibles();
 
-    if (!book) {
+    if (!ressourcesOK) {
 
       console.warn(
-        "Initialisation DSFR annulée : " +
-        "aucun élément <div class=\"book\"> trouvé."
+        "Ressources DSFR indisponibles. " +
+        "Initialisation annulée."
       );
-
+      document.body.style.visibility = "visible";
       return;
     }
 
-    // Initialisation complète
+    // Les ressources sont disponibles :
+    // on peut maintenant rendre la page visible.
+    document.body.style.visibility = "visible";
+
     await initialiserPage();
 
   } catch (error) {
@@ -2061,12 +2046,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   } finally {
 
-    clearTimeout(timeoutSpinner);
-
-    // -------------------------------------------------------
-    // Garantir au moins 1 seconde d'affichage du spinner
-    // -------------------------------------------------------
-
+    // Garantir au moins 300 ms d'affichage du spinner
     const tempsEcoule =
       performance.now() - debutSpinner;
 
