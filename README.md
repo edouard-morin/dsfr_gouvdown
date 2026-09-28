@@ -4,7 +4,7 @@
 
 # dsfr_gouvdown
 
-Dépôt prépraratoire à l'intégration d'une présentation DSFR gitbook dans le package R gouvdown (https://github.com/spyrales/gouvdown)
+Dépôt prépraratoire à l'intégration d'un style DSFR gitbook dans le package R gouvdown (https://github.com/spyrales/gouvdown)
 
 ## Utilisation
 Afin d’utiliser le composant `dsfr_gouvdown`, dans votre gitbook, il est necessaire d'avoir l'ensemble des fichiers du dépôt dans _book/libs/gouvdown-default-0.0.0.9001/ tels que :
