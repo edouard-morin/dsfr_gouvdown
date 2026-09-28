@@ -47,4 +47,5 @@ Vous pouvez paramétrer le logo, le titre, le sous-titre et la phrase de pied de
 <meta property="gd_dsfr:sous_titre_doc" content="">
 <!-- Phrase visible dans le pied de page. par défaut, vide. !-->
 <!-- A remplir uniquement si on souhaite remplir le pied de page. !-->
+<meta property="gd_dsfr:sentence_footer_doc" content="">
 ```
