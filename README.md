@@ -11,11 +11,13 @@ Afin d’utiliser le composant `dsfr_gouvdown`, dans votre gitbook, il est neces
 
 
 _book/libs/gouvdown-default-0.0.0.9001/
+
 ├── hidden.css
+
 ├── dsfrinmygitbookgouvdown.js
-└── dsfr_1_15_min/
-    └── dist/
-        ...
+
+└── dsfr_1_15_min/dist/
+    
 
 Ensuite, il faut que le contenu du fichier dsfr_gouvdown.html soit dans le head de vos pages html.
 Une façon d'y parvenir est d'appeler le fichier dsfr_gouvdown.html dans votre _output.yml :
